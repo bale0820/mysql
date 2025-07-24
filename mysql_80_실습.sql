@@ -416,7 +416,6 @@ select truncate(rand()*10000, 2) as number from dual;
 
 -- (4) mod(숫자, 나누는수) : 나머지 함수
 select mod(123, 2) as odd, mod(124,2) as even from dual;
-
 -- 3자리 수를 랜덤으로 발생시켜, 2로 나누어 홀수, 짝수를 구분
 select mod(floor(rand()*1000), 2) as result  from dual;
 
@@ -695,6 +694,7 @@ having sum(salary) >= 30000;
 
 -- rollup 함수 : 리포팅을 위한 함수
 -- 부서별 사원수, 총급여, 평균급여 조회
+desc employee;
 select 
 	   dept_id,
 	   count(*) count,
@@ -703,7 +703,6 @@ select
 from employee
 where salary is not null
 group by dept_id with rollup;
-
 
 -- rollup한 결과의 부서아이디를 추가
 select if(grouping(dept_id), '총합계', ifnull(dept_id, '-')) dept_id,
@@ -737,3 +736,223 @@ select *
 from employee
 order by salary desc
 limit 5;
+
+여기서부터
+/**********************************************
+	조인(JOIN) : 두 개이상의 테이블을 연동해서 sql 실행
+    ERD(Entity Relationship Diagrem) : 데이터베이스 구조도(설계도)
+    - 데이터 모델링 : 정규화 과정(중복되는 틀은 제거)
+    
+    ** ANSI SQL : 데이터베이스 시스템들의 표준 SQL 
+    조인(join) 종류
+    1) CROSS JOIN(CATEISIAN) - 합집합 : 테이블의 데이터 전체를 조인 - 테이블A(10)*테이블B(10) (연관성이 없을경우)
+    2) INNER JOIN(NATURAL) - 교집합 : 두 개이상의 테이블을 조인 연결 고리를 통해 조인 실행
+    3) OUTER JOIN - INNER JOIN + 선택한 테이블의 조인 제외 ROW 포함
+    4) SELF JOIN : 한 테이블을 두 개 테이블처럼 조인 실행
+    
+    
+**********************************************/
+
+use hrdb2019;
+select database();
+select*from employee;
+select*from department;
+
+
+-- cross join  : 합집함
+-- 형식> select [컬럼리스트] from [테이블1], [테이블2], ...
+-- where [조건절~]
+select *
+from employee,department;
+
+select*
+from employee cross join department; -- ansi sql방식 -- 하나의 employee가 여러개의 departmenty
+
+
+--
+select count(*) from vacation; -- 102
+-- 사원, 부서, 휴가 테이블 cross join : 20 * 7 * 102
+select count(*) from employee,department, vacation;
+select count(*) from employee cross join department cross join vacation;
+
+
+
+-- inner join -- 연결된 키를 가지고 똑같은것만 검색해서 가져온다
+select*
+from employee, department
+where employee.dept_id = department.dept_id
+order by emp_name;
+
+-- inner join : ansi
+select*
+from employee inner join department
+on employee.dept_id = department.dept_id
+order by emp_id;
+
+
+-- 사원테이블, 부서테이블, 본부테이블 inner join -- 키가 null은 제외한다
+select *
+from employee e, department d,unit u
+where e.dept_id = d.dept_id
+	and d.unit_id = u.unit_id
+order by e.emp_id;
+
+
+select *
+from employee e inner join department d inner join unit u 
+on  e.dept_id = d.dept_id
+	and d.unit_id = u.unit_id
+order by e.emp_id;
+
+select *
+from employee e 
+	inner join department d 
+	on  e.dept_id = d.dept_id
+	inner join unit u
+	on d.unit_id = u.unit_id
+order by e.emp_id;
+
+-- 사원테이블, 부서테이블, 본부테이블, 휴가 테이블 inner join : ansi
+select *
+from employee e, department d, unit u, vacation v
+where e.emp_id = v.emp_id
+	and d.unit_id = u.unit_id
+    and e.dept_id = d.dept_id;
+select*
+from vacation;
+
+
+
+-- 모든 사원들의 사번, 사원명, 부서아이디, 부서명, 입사일, 급여를 조회
+select e.emp_id,e.emp_name,e.dept_id, d.dept_name, e.hire_date, e.salary
+from employee e, department d
+where e.dept_id =  d.dept_id; 
+
+
+-- 영업부에 속한 사원들의 사번, 사원명, 입사일, 퇴사일, 폰번호, 급여, 부서아이디, 부서명 조회
+select e.emp_id,e.emp_name,e.hire_date,e.retire_date, e.phone, e.salary, d.dept_id, d.dept_name
+from employee e, department d
+where e.dept_id = d.dept_id
+and d.dept_name  = '영업'; 
+
+
+-- 인사과에 속한 사원들 중에 휴가를 사용한 사원들의 내역을 조회
+select*
+from employee e, department d, vacation v
+where e.dept_id = d.dept_id
+	and e.emp_id = v.emp_id
+    and d.dept_name = '인사';
+    
+    
+-- 영업부서 사원의 사원명, 폰번호, 부서명, 휴가사용 이유 조회
+-- 휴가 사용 이유가 '두통'인 사원, 소속본부 조회
+select e.emp_name, e.phone, d.dept_name, v.reason, u.unit_name
+from employee e, department d, unit u, vacation v
+where e.dept_id = d.dept_id
+	and d.unit_id = u.unit_id
+	and e.emp_id = v.emp_id
+    and dept_name = '영업'
+    and v.reason = '두통';
+    
+    
+select e.emp_name, e.phone, d.dept_name, v.reason, u.unit_name
+from employee e inner join department d inner join vacation v inner join unit u
+on e.dept_id = d.dept_id
+	and e.emp_id = v.emp_id
+    and d.unit_id = u.unit_id
+    and v.reason = '두통';
+    
+    
+-- 2014년부터 2016년까지 입사한 사원들 중에서 퇴사하지 않은 사원들의
+-- 사원아이디, 사원명, 부서명, 입사일, 소속본부를 조회
+-- 소속본부 기준으로 오름차순 정렬
+select e.emp_id, e.emp_name, d.dept_name, e.hire_date, u.unit_name
+from employee e, department d, unit u
+where e.dept_id = d.dept_id
+	and d.unit_id = u.unit_id
+    and left(hire_date,4) between '2014' and '2016'
+    and e.retire_date is null
+order by u.unit_id;
+
+
+-- 부서별 총급여, 평균급여, 총휴가사용일수를 조회
+select d.dept_name,d.dept_id, concat(format(sum(distinct e.salary),0),'만원') 총급여, concat(format(avg(e.salary),0),'만원') 평균급여, concat(sum(v.duration),'일') 총휴가사용일수
+from employee e , department d, vacation v
+where e.dept_id = d.dept_id
+	and e.emp_id = v.emp_id
+group by d.dept_id, d.dept_name;
+
+
+-- 본부별 휴가사용 일수
+select u.unit_name,d.dept_name,d.dept_id, sum(v.duration) as 휴가사용일수
+from employee e , department d, vacation v, unit u
+where e.dept_id = d.dept_id
+	and e.emp_id = v.emp_id
+    and d.unit_id = u.unit_id
+group by d.dept_id, d.dept_name, u.unit_name;
+
+
+
+
+-- outer join : inner join + 조인에서 제외된 row(테이블별 지정)
+-- 오라클 형식의 outer join은 사용불가, ansi sql 형식 사용 가능!!
+-- SELECT [컬럼리스트] FROM 
+-- [테이블명1 테이블별칭] LEFT/RIGHT OUTER JOIN 테이블명2 [테이블별칭], ...]
+-- 				 ON [테이블명1.조인컬럼 = 테이블명2.조인컬럼]
+
+-- ** 오라클 형식 outer join 사용불가!!!
+-- select * from table1 t1, table2 t2
+-- where t1.col = t2.col(+);
+
+-- 모든 부서의 부서아이디, 부서명, 본부명을 조회
+select*from department;
+select d.dept_id, d.dept_name, ifnull(u.unit_name, '협의중') as unit_name
+from department d
+	 left outer join unit u
+on d.unit_id = u.unit_id
+order by unit_name;
+
+select*
+from unit;
+select*
+from department;
+-- 본부별, 부서의 휴가사용 일수 조회 outer는 행개수나 다르거나 연결키가 null일 경우 포함시키고싶을때 사용 
+-- 부서의 누락없이 모두 출력
+
+select u.unit_name, d.dept_name, count(v.duration)
+from employee e left outer join vacation v 
+	on e.emp_id = v.emp_id
+    right outer join department d
+    on e.dept_id = d.dept_id
+    left outer join unit u
+    on d.unit_id = u.unit_id
+    group by u.unit_name, d.dept_name
+    order by u.unit_name desc;
+
+-- 2017년부터 2018년도까지 입사한 사원들의 사원명, 입사일, 연봉, 부서명 조회해주세요
+-- 단, 퇴사한 사원들 제외
+-- 소속본부를 모두 조회
+select e.emp_name, e.hire_date, e.salary,d.dept_name, u.unit_name
+from employee e inner join department d
+	on e.dept_id = d.dept_id
+	left outer join unit u
+	on d.unit_id = u.unit_id
+    where left(hire_date,4) between '2017' and '2018'
+		and retire_date is not null;
+        
+select*
+from employee;
+
+
+-- self join : 자기 자신의 테이블을 조인 
+-- self join은 서브쿼리 형태로 실행하는 경우가 많음!!
+-- select [컬럼리스트] from [테이블1], [테이블2] where [테이블1.컬럼명] = [테이블2.컬럼명]
+-- 사원테이블을 self join
+select e.emp_id, e.emp_name, m.emp_id, m.emp_name
+from employee e, employee m
+where e.emp_id = m.emp_id;
+
+
+select emp_id, emp_name
+from employee
+where emp_id = (select emp_id from employee where emp_name = '홍길동');
