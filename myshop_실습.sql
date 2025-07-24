@@ -323,26 +323,43 @@ group by city
 order by city asc;
 -- Q11) 지역별 포인트 합을 조회하세요.
 --      단, 포인트 합이 1,000,000 이상인 행만 포인트 합을 기준으로 내림차순 정렬해서 조회하세요.
-select sum(point) 섬
+select city 도, sum(point) 섬
 from customer
-group by city
+group by 1
 having 섬 >= 1000000
 order by sum(point) desc;
       
 -- Q12) 지역별 포인트 합을 조회하세요.
 --      단, 포인트 합을 기준으로 내림차순 정렬해서 조회하세요.
+select city, sum(point) 합
+from customer
+group by city
+order by 합 desc;
    
 
 -- Q13) 지역별 고객의 수, 포인트 합을 조회하세요.
 --      단, 지역 이름을 기준으로 오름차순 정렬해서 조회하세요.
-
-
+select city, count(*), sum(point)
+from customer
+group by city
+order by city ;
 -- Q14) 지역별 포인트 합, 포인트 평균을 조회하세요.
 --      단, 포인트가 NULL이 아닌 고객을 대상으로 하며, 지역 이름을 기준으로 오름차순 정렬해서 조회하세요.
-
+select city, sum(point), avg(point)
+from customer
+where point is not null
+group by city
+order by city ;
 -- Q15) '서울', '부산', '대구' 지역 고객의 지역별, 남녀별 포인트 합과 평균을 조회하세요.
 --      단, 지역 이름을 기준으로 오름차순, 같은 지역은 성별을 기준으로 오름차순 정렬해서 조회하세요.
-
+select city, sum(point), avg(point)
+from customer
+where city in('서울',)
+group by city
+having city = '서울'
+	or city = '부산'
+    or city = '대구'
+order by city, gender;
 
 /** order_header 테이블 사용 **/
     
