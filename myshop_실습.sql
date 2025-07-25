@@ -371,7 +371,13 @@ order by city, gender;
 -- Q18) 2019.01 ~ 2019.06 기간 주문에 대하여 주문연도별, 주문월별 전체금액 합을 조회하세요.
 
 -- Q19) 2019.01 ~ 2019.06 기간 주문에 대하여 주문연도별, 주문월별 전체금액 합과 평균을 조회하세요.
-
+use myshop2019;
+select database();
+select if(month_val is null,'총합계',month_val ),sum(total_due),avg(total_due)
+from (select left(order_date,7) as month_val, total_due from order_header where left(order_date,7) between '2019-01' and '2019-06' ) as f
+group by month_val with rollup;
+select*
+from order_header;
 -- Q20) 주문연도별, 주문월별 전체금액 합과 평균을 조회하고, rollup 함수를 이용하여 소계와 총계를 출력해주세요.
 
 
@@ -390,3 +396,17 @@ order by city, gender;
 -- Q10) 위에서 작성한 쿼리문을 복사해서 붙여 넣은 후 소분류이름, 대분류아이디가 조회되게 수정하세요.
 -- Q11) 다정한 사원이 2019년에 주문한 상품명을 모두 출력해주세요.
 -- Q12) 청소기를 구입한 고객아이디, 사원번호, 주문번호, 주문일시를 조회하세요.
+use myshop2019;
+select datebase();
+show tables;
+select*
+from customer left outer join order_header o
+	on c.customer_id = o.customer_id
+    left outer join employee e
+    on e.employee_id = o.employee_id
+    left outer join order_detail od
+    on o.orde_id
+
+
+
+
