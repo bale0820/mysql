@@ -883,11 +883,10 @@ where e.emp_id = m.emp_id;
 select emp_id, emp_name
 from employee 
 where emp_id = (select emp_id from employee where emp_name='홍길동');
-여기서부터
 
 /************************************************************
 	서브쿼리(SubQuery) :  메인 쿼리에 다른 쿼리를 추가하여 실행하는 방식
-    형식 : select [컬럼리스트 : (스칼라서브쿼리)] -- 별로 추천 x
+    형식 : select [컬럼리스트 : (스칼라서브쿼리)]
 			from [테이블명 : (인라인뷰)]
             where [조건절 : (서브쿼리)]
 *************************************************************/
@@ -974,6 +973,7 @@ where emp_id in (select emp_id
 -- [휴가를 사용한 사원정보만!!]
 -- 사원별 휴가사용 일수를 그룹핑하여, 사원아이디, 사원명, 입사일, 연봉, 휴가사용일수를 조회해주세요. 
 desc vacation;
+
 select e.emp_id, e.emp_name, e.hire_date, e.salary, v.duration
 from employee e, (select emp_id, sum(duration) as duration
 				from vacation
@@ -1062,8 +1062,7 @@ where dept_id = (select dept_id from department where dept_name = '정보시스�
     뷰 생성 : create view [view 이름]
 			 as [SQL 정의];
 	뷰 삭제 : drop view [view 이름]
-    ** 뷰 생성시 권한을 할당 받아야 함 - mysql, maria 제외   
-    $가붙은건 시스템성는확인용뷰
+    ** 뷰 생성시 권한을 할당 받아야 함 - mysql, maria 제외              
 ********************************************************************/
 select *
 from information_schema.views
@@ -1081,101 +1080,99 @@ from employee e,
 	having sum(salary) >= 30000) t
 where e.dept_id = d.dept_id and d.dept_id = t.dept_id ;
 
+
 -- view_salary_sum  실행
 select *
 from view_salary_sum;
 
 -- view_salary_sum  삭제
 drop view view_salary_sum;
-drop view view_employee;
 select * from information_schema.views
 where table_schema = 'hrdb2019';
 
 
-/*********************************************
-		DDL(Data Definition Language) : 생성, 수정, 삭제 - 테이블기준
-		DML : C(insert), R(select), U(update), D(delete)
-*********************************************/
-
+/*******************************************************************
+	     DDL(Data Definition Language) : 생성, 수정, 삭제 - 테이블기준
+         DML : C(insert), R(select), U(update), D(delete)
+********************************************************************/
 -- 모든 테이블 목록
-use hrdb2019;
-select database();
 show tables;
 
 -- [테이블 생성]
 -- 형식> create table [테이블명] (
---       컬럼명 데이터타입(크기),
--- 
---     );
--- 데이터 타입 : 정수형(int, long..), 실수형(float, double), 문자형(char, varchar, longtext...)
---             이진데이터(longblob), 날짜형(date,datetime)
+-- 			컬럼명	데이터타입(크기),
+-- 			....
+-- 		);
+-- 데이터 타입 : 정수형(int, long..), 실수형(float, double), 문자형(char, varchar, longtext..)
+-- 			  이진데이터(longblob), 날짜형(date, datetime)  
 -- char(고정형 문자형) : 크기가 메모리에 고정되는 형식 , 예) char(10) --> 3자리 입력 : 7자리 낭비
--- varchaer(가변형 문자형) : 실제 저장되는 데이터 크기에 따라 메모리가 변경되는 형식, 
--- 						  varchar(10) --> 3자리 입력 : 메모리 실제 3자리 공간만 생성
+-- varchar(가변형 문자형) : 실제 저장되는 데이터 크리에 따라 메모리가 변경되는 형식
+--     					 varchar(10) --> 3자리 입력 : 메모리 실제 3자리 공간만 생성
 -- longtext : 문장형태로 다수의 문자열을 저장
 -- longblob : 이진데이터 타입의 이미지, 동영상 등 데이터 저장
--- date : 년,월,일 -> curdate()
--- datetime : 년, 월, 일, 시, 분 ,초 -> sysdate(), now()
+-- date : 년, 월, 일 -> curdate()
+-- datetime : 년, 월, 일, 시, 분, 초 -> sysdate(), now()
 desc employee;
-select*from employee;
+select * from employee;
 
 -- emp 테이블 생성
--- emp_id : (char, 4), ename : (varchar,10), gender : (char,1), hire_date : (datetime), salary : (int) 
+-- emp_id : (char, 4), ename : (varchar, 10), gender : (char, 1), hire_date : (datetime), salary: (int)
 show tables;
-create table emp (
-	emp_id     char(4),
-    ename      varchar(10),
-	gender     char(1),
-    hire_date  datetime,
-    salary     int
+create table emp(
+	emp_id		char(4),
+    ename		varchar(10),
+    gender		char(1),
+    hire_date	datetime,
+    salary		int
 );
 
 select * from information_schema.tables
-where table_schema = 'hrdb2019';
+where table_schema ='hrdb2019';
 
 desc emp;
 
 -- [테이블 삭제]
 -- 형식 : drop table [테이블명]
 show tables;
-drop table emp; 
+drop table emp;
 
 -- [테이블 복제]
--- 형식 : create table [테이블명] cas는 테이블복제
---       as [SQL 정의] 
--- employee 테이블을 복제하여 emp 테이블 생성
-create table emp -- 물리적 저장
-as 
-select * from employee;
+-- 형식 : create table [테이블명]
+-- 		 as  [SQL 정의]
 
+-- employee 테이블을 복제하여 emp 테이블 생성
+create table emp
+as
+select * from employee;
 show tables;
+
 select * from emp;
 desc employee;
-desc emp; -- 단 제약사항은 복사가 안된다(key같은거)
+desc emp;
 
 -- 2016년도에 입사한 사원의 정보를 복제 : employee_2016
 create table employee_2016
 as
-select*
-from employee
-where left(hire_date,4) = '2016';
+select * from employee
+where left(hire_date, 4) = '2016';
 
 show tables;
 
-
-/*****************************************
-	데이터 생성(insert :C)
-    형식> insert into [테이블명] {컬럼리스트...}
-    values(데이터1, 데이터2....)
-*****************************************/
+/*+++++++++++++++++++++++++++++++++++++++++++++++++++++
+	데이터 생성(insert : C)
+    형식> insert into [테이블명] ({컬럼리스트...})
+		 values(데이터1, 데이터2 ....)
++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 show tables;
 drop table emp;
 desc emp;
 select * from employee;
 
+insert into emp(emp_id, ename, gender, hire_date, salary)
+values('s001', '홍길동', 'm', now(), 1000) ; 
 
-insert into emp(ename, emp_id, gender,salary, hire_date)
-values('s001','홍길동', 'm', 1000,null) ;
+insert into emp(ename, emp_id, gender, salary, hire_date)
+values('s001', '홍길동', 'm', 1000, null) ; 
 
 insert into emp(emp_id)
 values('s002');
@@ -1188,142 +1185,136 @@ truncate table emp;
 select * from emp;
 show tables;
 drop table emp;
-create table emp (
-	emp_id     char(4)      not null,
-    ename      varchar(10)  not null,
-	gender     char(1)      not null,
-    hire_date  datetime,
-    salary     int
+
+create table emp(
+	emp_id		char(4)		not null,
+    ename		varchar(10) not null,
+    gender		char(1) 	not null,
+    hire_date	datetime,
+    salary		int
 );
 
 desc emp;
 insert into emp(emp_id, ename, gender, hire_date, salary)
-values('s001', '홍길동', 'm', now(), 1000);
-select * from emp;
+	values('s001', '홍길동', 'm', now(), 1000);
 
 insert into emp
-	values('s002', '이순신', 'm', sysdate(),2000);
-    
+	values('s002', '이순신', 'm', sysdate(), 2000);
+
 insert into emp
-	values('s003', '김유신', 'm', curdate(),2000);
+	values('s003', '김유신', 'm', curdate(), 2000);
     
 desc emp;
-select * from emp;
+select * from emp;    
 
 -- [자동 행번호 생성 : auto_increment]
 -- 정수형으로 번호를 생성하여 저장함, pk, unique 제약으로 설정된 컬럼에 주로 사용
 create table emp2(
-	emp_id      int    auto_increment primary key, -- primary key : unique + not null
-    ename       varchar(10)  not null,
-    gender      char(1) not null,
-    hire_date   date,
-    salary      int
+	emp_id		int		auto_increment  primary key,  -- primary key : unique + not null
+    ename		varchar(10) not null,
+    gender 		char(1) not null,
+    hire_date	date,
+    salary 		int
 );
-
 show tables;
-desc emp2;
-insert into emp2(ename,gender,hire_date,salary)
-		values('홍길동','m', now(), 1000);
-select*from emp2;
+desc emp2; 
+insert into emp2(ename, gender, hire_date, salary)
+		values('홍길동', 'm', now(), 1000);
+select * from emp2;
 
 
-
-/*********************************************
-	테이블 변경 : alter table
-	형식> alter table [테이블명]
-			add column [새로추가하는 컬럼명, 데이터타입] -- null 허용
-            modify column [변경하는 컬럼명, 데이터타입] -- 크기 고려
-            drop column [삭제하는 컬럼명]
-*********************************************/
-
--- char(5) : s0001 --> char(3)
-
+/*******************************************************************
+	  테이블 변경 : alter table
+      형식>  alter table [테이블명]
+				add column [새로추가하는 컬럼명, 데이터타입] -- null 허용
+                modify column [변경하는 컬럼명, 데이터타입] -- 크기 고려 
+                drop column [삭제하는 컬럼명]
+********************************************************************/
 show tables;
 select * from emp;
 
-
--- phone(char,13) 컬럼 추가, null 허용
-alter table emp 
+-- phone(char, 13) 컬럼 추가, null 허용
+alter table emp
 	add column phone char(13) null;
-desc emp;
-select * from emp;
+desc emp;   
+select * from emp; 
 
 insert into emp
 	values('s004', '홍홍', 'f', now(), 4000, '010-1234-1234');
     
--- phone 컬럼의 크기 변경 : char(13) --> char(10)
+-- phone 컬럼의 크기 변경 : char(13) --> char(10)    
 alter table emp
-	modify column phone char(13) null; -- 저장된 데이터보다 크기가 작으면 에러 발생; 데이터 유실 위험 발생!!
+	modify column phone char(10) null; -- 저장된 데이터보다 크기가 작으면 에러 발생; 데이터 유실 위험 발생!!
 
-desc emp;
+desc emp;    
 
 -- phone 컬럼 삭제
 alter table emp
 	drop column phone;
 
-
-/*********************************************
+/*+++++++++++++++++++++++++++++++++++++++++++++++++++++
 	데이터 수정(update : U)
-	형식> update [테이블명]
-			set (컬럼리스트...)
-			where [조건절 ~] 
-	** set sql_safe_updates = 1 or 0;
-	   -- 1:업데이트 불가, 0:업데이트 가능 
-*********************************************/
+    형식> update [테이블명]
+			set [컬럼리스트...]
+			where [조건절 ~]
+	** set sql_safe_updates = 1 or 0;  
+       -- 1:업데이트 불가, 0:업데이트 가능
++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 select * from emp;
-set sql_safe_updates = 0; -- 업데이트 모드 해제
+set sql_safe_updates = 0;  -- 업데이트 모드 해제
+
 -- 홍길동의 급여를 6000으로 수정
-update emp
+update emp 
 	set salary = 6000
     where emp_id = 's001';
-    
-select * from emp;
 
--- 김유신의 입사날짜를  '20210725'로 수정
+select * from emp;    
+
+-- 김유신의 입사날짜를 '20210725'로 수정
 update emp
- set hire_date = cast('20210725' as datetime)
- where emp_id = 's003';
- 
- 
- -- emp2 테이블에 retire_date 컬럼추가 : date, null 허용
- -- 기존 데이터는 현재 날짜로 업데이트
- -- 업데이트 완료 후 retire_date 'not null' 설정 변경
-  select * from emp2;
+	set hire_date = cast('20210725' as datetime)
+    where emp_id = 's003';
 
- alter table emp2
-	add column retire_date date null; -- not null 안된다 생성하는거니까
+update emp
+	set hire_date = '20210725'
+    where emp_id = 's003';    
+
+-- emp2 테이블에 retire_date 컬럼추가 : date, null 허용
+-- 기존 데이터는 현재 날짜로 업데이트
+-- 업데이트 완료 후 retire_date 'not null' 설정 변경
+select * from emp2;
+alter table emp2 
+	add column retire_date date null;
     
-update emp2
-	set retire_date = curdate()
-    where retire_date is null;
-    
-desc emp2;
+update emp2 
+		set retire_date = curdate()
+		where retire_date is null;
+
+desc emp2;        
 alter table emp2
 	modify column retire_date date not null;
- 
- 
- /*********************************************
+
+/*+++++++++++++++++++++++++++++++++++++++++++++++++++++
 	데이터 삭제(delete : D)
-	형식> delete from [테이블명]
+    형식> delete from [테이블명]			
 			where [조건절 ~]
-	** set sql_safe_updates = 1 or 0;
-	   -- 1:업데이트 불가, 0:업데이트 가능 
-*********************************************/
+	** set sql_safe_updates = 1 or 0;  
+       -- 1:업데이트 불가, 0:업데이트 가능
++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 select * from emp;
 
 -- 이순신 사원 삭제
-delete from emp -- 영구삭제되지는않고 남겨진다
-	where emp_id = 's003';
-
+delete from emp
+	where emp_id = 's002'; 
+ 
 -- s004 사원 삭제
-delete from emp 
-	where emp_id = 's004';
-rollback;
+delete from emp
+	where emp_id = 's004'; 
 
-
-select @@autocommit;
+select @@autocommit;    
 set autocommit = 0;
+    
 
-/********************************************
-	제약사항 !!
-********************************************/
+/*******************************************************************
+	  제약사항 !!
+********************************************************************/
