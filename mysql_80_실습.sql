@@ -1315,6 +1315,399 @@ select @@autocommit;
 set autocommit = 0;
     
 
-/*******************************************************************
-	  제약사항 !!
-********************************************************************/
+/************************************************
+		constraint(제약사항) : 데이터의 무결성 원칙을 적용하기 위한 규칙\
+         - unique(유니크 제약) : 중복방지 제약
+         - not null : null 값을 허용하지 않는 제약 :: 화면 구현시 유효성 체크로직과 연동!!
+         - primary key(기본키) : unique + not null 제약 설정
+         - foreign key(참조키) : 타 테이블의 기본키를 참조하는 컬럼 설정,
+							   참조하는 기본키의 데이터타입과 동일함
+		- default : 데이터 입력 시 기본으로 저장데이터는 값 설정
+		** 제약사항은 테이블 생성 시 정의 가능함, 또는 테이블 수정으로도 변경, 추가 가능
+        - create table..., alter table... 
+        -- 기본키(열쇠모양), 참조키 
+************************************************/
+use hrdb2019;
+select database();
+select*
+from information_schema.table_constraints
+where table_schema = 'hrdb2019';
+
+
+desc employee;
+desc department;
+
+-- 테이블 생성 : emp_const
+create table emp_const(
+	emp_id     char(4)    primary key,
+    emp_name   varchar(10)  not null,
+    hire_date  date,
+    salary 	   int
+);
+
+
+show tables;
+desc emp_const;
+
+
+insert into emp_const (emp_id, emp_name,hire_date,salary)
+	values('s001', '홍길동', curdate(), 1000);
+select * from emp_const;
+
+
+
+-- emp_const2 컬럼 추가 : phone, char(13) 컬럼 추가
+
+desc emp_const2;
+select * from emp_const2;
+
+alter table emp_const2
+	add column phone char(13) null;
+    
+set sql_safe_updates = 0; -- 해제
+update emp_const2
+	set phone = '010-1234-1234'
+	where emp_name = '홍길동';
+select * from emp_const2;
+
+alter table emp_const2
+	modify column phone char(13) not null;
+desc emp_const2;
+
+
+-- phone 컬럼에 unique 제약 추가, 중복된 데이터 확인, null 입력 가능(단,1개만)
+
+alter table emp_const2
+	add constraint uni_phone unique(phone);
+show tables;
+select * from information_schema.table_constraints
+where table_name = 'emp_cosnt2';
+
+-- phone 컬럼에 unique 제약 삭제
+alter table emp_const2
+	drop constraint uni_phone;
+ 
+-- emp 테이블 삭제
+show tables;
+
+drop table emp;
+drop table emp2;
+
+-- department 테이블의 복사본 : dept, employee 테이블 복사본 : emp
+select * from department
+where unit_id is not null;
+create table dept as select * from department where unit_id is not null;
+show tables;
+desc dept;
+select * from dept;
+
+-- dept_id 컬럼에 primary key 제약 추가
+
+alter table dept
+	add constraint pk_dept_id  primary key(dept_id);
+
+select * from information_schema.table_constraints
+where table_name = 'dept';
+
+desc dept;
+-- 2018년도에 입사한 사원들만 복제
+
+create table emp as
+select * from employee
+where left(hire_date,4) = '2018';
+
+show tables;
+desc emp;
+select * from emp;
+
+
+-- emp 테이블 제약 사항 추가, primary key(emp_id)
+alter table emp
+	add constraint pk_emp_id primary key(emp_id);
+desc emp;
+
+
+-- foreign key(dept_id) 참조키 제약 추가
+alter table emp
+ add constraint fk_dept_id foreign key(dept_id)
+	 references dept(dept_id);
+alter table emp
+
+
+select * from emp;
+-- 고소해 부서 이동 --> ACC
+
+update emp
+	set dept_id = 'acc'
+    where emp_id = 's0020';
+
+
+select * from dept;
+-- 홍길동 사원 추가
+desc emp;
+insert into emp
+values('S0001','홍길동',null,'M', curdate(), null, 'HRD','010-1234-2345','hong@test.com', null);
+
+insert into emp
+values('S0002','홍길동',null,'M', curdate(), null, 'SYS','010-1234-2345','hong@test.com', null);
+select * from emp;
+
+/*
+[학사관리 시스템 설계]
+1. 과목(SUBJECT) 테이블은 
+	컬럼 : SID(과목아이디), SNAME(과목명), SDATE(등록일:년월일 시분초)
+    SID는 기본키, 자동으로 생성한다.
+  
+2. 학생(STUDENT) 테이블은 반드시 하나이상의 과목을 수강해야 한다. 
+	컬럼 : STID(학생아이디) 기본키, 자동생성
+		SNAME(학생명) 널허용x,
+		GENDER(성별)  문자1자 널허용x,
+		SID(과목아이디),
+		STDATE(등록일자) 년월일 시분초
+3. 교수(PROFESSOR) 테이블은 반드시 하나이상의 과목을 강의해야 한다.
+	컬럼 : PID(교수아이디) 기본키, 자동생성
+		NAME(교수명) 널허용x
+		SID(과목아이디),
+		PDATE(등록일자) 년월일 시분초
+*/
+  create table subject(
+	sid  int   primary key   auto_increment,
+    sname varchar(20) not null,
+    sdate datetime
+    );
+    show tables;
+    desc subject;
+    
+ create table student(
+	stid  int auto_increment primary key,
+    sname varchar(10) not null ,
+    gender  char(1) not null ,
+    sid int,
+    stdate datetime,
+    constraint fk_sid_student foreign key(sid) -- mul이 외래키
+		references subject(sid)
+    );
+	show tables;
+    desc student;
+        
+   create table professor(
+	pid  int auto_increment primary key,
+    name varchar(10) not null ,
+    sid  int ,
+    pdate  datetime,
+    constraint fk_sid_professor foreign key(sid)
+		references subject(sid)
+    );
+    
+show tables;
+desc professor;
+
+select * from information_schema.table_constraints
+	where table_name in('subject','student','professor');
+
+
+-- 과목 데이터 추가
+insert into subject(sname,sdate) values('java', now());
+insert into subject(sname,sdate) values('mysql', now());
+insert into subject(sname,sdate) values('html', now());
+insert into subject(sname,sdate) values('react', now());
+insert into subject(sname,sdate) values('node', now());
+
+select * from subject;
+
+-- 학생 데이터 입력
+insert into student(sname, gender,sid, stdate) 
+	values('홍길동', 'm',1,now());
+insert into student(sname, gender,sid, stdate) 
+	values('이순신', 'm',2,now());
+insert into student(sname, gender,sid, stdate) 
+	values('김유신', 'm',3,now());
+insert into student(sname, gender,sid, stdate) 
+	values('박보검', 'm',4,now());
+insert into student(sname, gender,sid, stdate) 
+	values('아이유', 'f',5,now()); 
+select * from student;
+
+-- 교수 데이터 추가
+insert into professor(name,sid, pdate) values('스미스',1,now());
+insert into professor(name,sid, pdate) values('홍홍',3,now());
+insert into professor(name,sid, pdate) values('김철수',4,now());
+
+select * from professor;
+
+
+-- 홍길동 학생이 수강하는 과목을 조회
+select su.sname
+from subject su,student st
+where su.sid = st.sid
+and st.sname = '홍길동';
+
+select su.sname
+from subject su inner join student st
+				on su.sid = st.sid
+where st.sname = '홍길동';
+
+
+
+
+select sname from subject
+where sid =(select sid from student where sname = '홍길동');
+
+-- 홍길동 학생이 수강하는 과목명과 학생명을 조회
+select su.sname as 과목명,st.sname as 학생명
+from subject su inner join student st
+					on su.sid = st.sid
+where st.sname = '홍길동';
+
+
+-- 스미스 교수가 강의하는 과목을 조회
+select su.sname
+from subject su, professor p
+where su.sid = p.sid
+and name = '스미스';
+
+select su.sname
+from subject su inner join professor p
+on su.sid = p.sid
+where name = '스미스';
+
+
+select sname
+from subject 
+where sid = (select sid from professor  where name = '스미스');
+
+-- java,안중근 교수 추가
+insert into professor(name,sid,pdate) values('안중근',1,now());
+select * from  professor;
+
+-- java 수업을 강의하는 모든 교수 조회
+select p.name
+from professor p, subject su
+where p.sid = su.sid
+and su.sname = 'java';
+
+
+select p.name
+from professor p inner join subject su
+on p.sid = su.sid
+where su.sname = 'java';
+
+
+select name
+from professor
+where sid in(select sid from subject where sname = 'java');
+
+-- java 수업을 강의하는 교수와 수강신청한 학생들을 조회
+-- 과목아이디, 과목명,교수명,학생명
+
+select su.sid, su.sname, p.name,st.sname -- 구 문법
+from subject su, professor p, student st
+where su.sid = p.sid and   su.sid = st.sid
+and su.sname = 'java';
+
+
+select su.sid, su.sname, p.name,st.sname -- ansi sql 문법
+from subject su inner join professor p on su.sid = p.sid
+	 inner join student st on   su.sid = st.sid
+where su.sname = 'java';
+
+-- 김철수 교수가 강의하는 과목을 수강하는 학생 조회
+-- 학샘영 출력, 서브쿼리
+select sname from student
+where sid = (select sid from subject
+				where sid = (select sid from professor where name = '김철수'));
+select*
+from subject;
+select*
+from professor;                
+    
+--
+desc student;
+select*
+from student; 
+-- kor, eng, math 과목 컬럼 추가
+alter table student
+	add column kor decimal(7,2) null;
+    
+alter table student
+	add column eng decimal(7,2) null;
+    
+alter table student
+    add column math decimal(7,2) null;
+    
+desc student;
+select*from student;
+
+
+update student
+	set kor = 0.0, eng=0.0, math=0.0
+    where kor is null
+    and eng is null
+    and math is null;
+    
+select*from student;    
+
+/*********************************************
+	회원, 상품, 주문, 주문상세 테이블 생성 및 실습
+*********************************************/
+show tables;
+select * from member;
+insert into member(name,email) values('이순신','lee@example.com');
+
+desc product;
+insert into product(name,price)
+values('모니터', 1000),
+	  ('키보드',2000),
+	  ('마우스',2500);
+select * from product;
+
+show tables;
+desc `order`;
+select * from `order`;
+
+insert into `order`(member_id, order_date)
+	values(2,'2024-12-25');
+insert into `order`(member_id, order_date)
+	values(2,'2025-01-25');
+
+show tables;
+desc orderitem;
+select * from product;
+insert into orderitem(order_id, product_id, quantity, unit_price)
+values(1,2,1,2000);
+
+insert into orderitem(order_id, product_id, quantity, unit_price)
+values(2,3,2,2500);
+select * from orderitem;
+
+-- 홍길동 고객의 고객명, 이메일, 가입날짜, 주문날짜를 조회
+-- 주문날짜는 년, 월, 일로만 출력
+select m.name,m.email,m.created_at, left(o.order_date,10) as order_date
+from member m, `order` o
+where m.member_id = o.member_id
+and m.name = '홍길동';
+
+
+select m.name,m.email,m.created_at, left(o.order_date,10) as order_date
+from member m inner join `order` o
+on m.member_id = o.member_id
+where m.name = '홍길동';
+
+select m.name,group_concat(distinct m.created_at order by m.created_at separator',')
+from member m inner join `order` o
+on m.member_id = o.member_id
+where m.name = '홍길동';
+
+-- 상품별 주문 건수
+-- 상품명, 주문건수 출력
+select p.name, count(*) as count
+from product p, orderitem oi
+where p.product_id = oi.product_id
+group by p.name
+order by count desc;
+
+
+select p.name, count(*) as count
+from product p inner join orderitem oi on p.product_id = oi.product_id
+group by p.name
+order by count;
